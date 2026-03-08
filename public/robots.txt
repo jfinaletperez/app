@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://shiftmaster-pro.vercel.app/sitemap.xml
