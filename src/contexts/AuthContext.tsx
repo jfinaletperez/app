@@ -19,6 +19,7 @@ export interface Employee {
     dayRate: number;
     status: 'ACTIVE' | 'PENDING';
     isHidden: boolean;
+    password?: string;
 }
 
 export interface Vacation {
@@ -60,7 +61,7 @@ interface AuthContextType {
     vacations: Vacation[];
     currentWeek: Date;
     weekKey: string;
-    login: (role: Role) => void;
+    login: (email: string, password: string) => Promise<{ success: boolean; message: string }>;
     logout: () => void;
     registerCompany: (company: string, adminName: string, adminEmail: string) => void;
     isEditor: boolean;
@@ -116,6 +117,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             setQuadrants(data.quadrants || {});
             setAdvances(data.advances || {});
             setVacations(data.vacations || []);
+            if (data.user) setUser(data.user);
         }
     }, []);
 
@@ -127,29 +129,36 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 employees,
                 quadrants,
                 advances,
-                vacations
+                vacations,
+                user // Guardamos el usuario actual
             };
             localStorage.setItem('shiftmaster_data', JSON.stringify(data));
         }
-    }, [companyName, employees, quadrants, advances, vacations]);
+    }, [companyName, employees, quadrants, advances, vacations, user]);
 
-    const login = (role: Role) => {
-        if (role === 'MANAGER') {
-            const admin = employees.find(e => e.role === 'MANAGER');
-            setUser({
-                id: admin?.id || 'm1',
-                name: admin?.name || 'Gerente Admin',
-                role: 'MANAGER',
-                email: admin?.email || 'admin@empresa.com'
-            });
+    const login = async (email: string, password: string): Promise<{ success: boolean; message: string }> => {
+        // En una app real esto iría a una API. Aquí buscamos en el estado local.
+        const foundEmployee = employees.find(e => e.email.toLowerCase() === email.toLowerCase());
+
+        if (!foundEmployee) {
+            return { success: false, message: 'Usuario no encontrado.' };
+        }
+
+        // Simulación simple: si no tiene password seteado (nuevo), o si coincide
+        // El default para el admin será 'admin123' si no se especifica.
+        const correctPassword = foundEmployee.password || '1234';
+
+        if (password === correctPassword) {
+            const newUser = {
+                id: foundEmployee.id,
+                name: foundEmployee.name,
+                role: foundEmployee.role,
+                email: foundEmployee.email
+            };
+            setUser(newUser);
+            return { success: true, message: '¡Bienvenido!' };
         } else {
-            const demoWorker = employees.find(e => e.role === 'WORKER') || employees[0];
-            setUser({
-                id: demoWorker?.id || 'w1',
-                name: demoWorker?.name || 'Empleado Demo',
-                role: 'WORKER',
-                email: demoWorker?.email || 'demo@empresa.com'
-            });
+            return { success: false, message: 'Contraseña incorrecta.' };
         }
     };
 
@@ -164,7 +173,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             jobColor: '#6366f1',
             dayRate: 0,
             status: 'ACTIVE',
-            isHidden: false
+            isHidden: false,
+            password: 'admin' // Password por defecto para el primer admin
         };
 
         setCompanyName(company);

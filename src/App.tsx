@@ -6,12 +6,14 @@ import VacationManager from './components/VacationManager';
 import WorkerMonthlyView from './components/WorkerMonthlyView';
 import Onboarding from './components/Onboarding';
 import { useAuth } from './contexts/AuthContext';
-import { LayoutDashboard, Users, LogOut, ShieldCheck, DollarSign, Umbrella, Calendar, Building2 } from 'lucide-react';
+import { LayoutDashboard, Users, LogOut, ShieldCheck, DollarSign, Umbrella, Calendar, Building2, Mail, Lock, AlertCircle, Loader2 } from 'lucide-react';
 
 const App: React.FC = () => {
     const { user, companyName, login, logout, isEditor } = useAuth();
     const [activeTab, setActiveTab] = useState<'QUADRANT' | 'EMPLOYEES' | 'SALARIES' | 'VACATIONS' | 'MY_MONTH'>('QUADRANT');
     const [invitationToken, setInvitationToken] = useState<string | null>(new URLSearchParams(window.location.search).get('token'));
+    const [showOnboardingOverride, setShowOnboardingOverride] = useState(false);
+    const [workerPassword, setWorkerPassword] = useState('');
 
     if (invitationToken) {
         return (
@@ -26,18 +28,48 @@ const App: React.FC = () => {
                         Para completar tu perfil, por favor introduce una contraseña para tu cuenta vinculada a este dispositivo.
                     </p>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        <input type="password" placeholder="Nueva Contraseña" style={{ width: '100%', padding: '12px', borderRadius: '10px', background: 'var(--background)', border: '1px solid var(--glass-border)', color: 'white' }} />
-                        <button className="neon-button" onClick={() => {
-                            // En una app real esto guardaría la clave
-                            setInvitationToken(null);
-                            window.history.replaceState({}, document.title, "/");
-                            login('WORKER');
+                        <input
+                            type="password"
+                            placeholder="Nueva Contraseña"
+                            value={workerPassword}
+                            onChange={e => setWorkerPassword(e.target.value)}
+                            style={{ width: '100%', padding: '12px', borderRadius: '10px', background: 'var(--background)', border: '1px solid var(--glass-border)', color: 'white' }}
+                        />
+                        <button className="neon-button" onClick={async () => {
+                            // En una app real esto guardaría el correo decodificado del token
+                            // Por ahora, simulamos el login directo con el token decodificado
+                            const email = atob(invitationToken).slice(0, -13); // Restamos el Date.now()
+                            const result = await login(email, workerPassword);
+                            if (result.success) {
+                                setInvitationToken(null);
+                                window.history.replaceState({}, document.title, "/");
+                            }
                         }}>Crear Perfil y Acceder</button>
                     </div>
                 </div>
             </div>
         );
     }
+
+    const [loginData, setLoginData] = useState({ email: '', password: '' });
+    const [loginError, setLoginError] = useState('');
+    const [isLoggingIn, setIsLoggingIn] = useState(false);
+
+    const handleLogin = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoginError('');
+        setIsLoggingIn(true);
+        try {
+            const result = await login(loginData.email, loginData.password);
+            if (!result.success) {
+                setLoginError(result.message);
+            }
+        } catch (err) {
+            setLoginError('Error al intentar iniciar sesión.');
+        } finally {
+            setIsLoggingIn(false);
+        }
+    };
 
     if (!companyName) {
         return <Onboarding />;
@@ -46,15 +78,75 @@ const App: React.FC = () => {
     if (!user) {
         return (
             <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '1rem' }}>
-                <div className="glass-card" style={{ padding: '3rem', textAlign: 'center', maxWidth: '500px', width: '100%' }}>
-                    <ShieldCheck size={64} style={{ color: 'var(--primary)', marginBottom: '1.5rem' }} />
-                    <h1 style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '1rem', background: 'linear-gradient(to right, var(--primary), var(--secondary))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                        ShiftMaster Pro
-                    </h1>
-                    <p style={{ color: 'var(--text-muted)', marginBottom: '2.5rem' }}>Acceso restringido para personal autorizado.</p>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        <button className="neon-button" onClick={() => login('MANAGER')}>Acceso Gerente</button>
-                        <button className="neon-button" onClick={() => login('WORKER')} style={{ background: 'var(--secondary)' }}>Acceso Trabajador</button>
+                <div className="glass-card" style={{ padding: '2.5rem', maxWidth: '450px', width: '100%', border: '1px solid var(--glass-border)' }}>
+                    <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+                        <div style={{ display: 'inline-flex', background: 'rgba(99, 102, 241, 0.1)', padding: '12px', borderRadius: '16px', color: 'var(--primary)', marginBottom: '1rem' }}>
+                            <ShieldCheck size={32} />
+                        </div>
+                        <h1 style={{ fontSize: '2.2rem', fontWeight: '800', marginBottom: '0.5rem', background: 'linear-gradient(to right, var(--primary), var(--secondary))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                            ShiftMaster Pro
+                        </h1>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Introduce tus credenciales para acceder.</p>
+                    </div>
+
+                    <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+                        <div>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                                <Mail size={14} /> Correo Electrónico
+                            </label>
+                            <input
+                                required
+                                type="email"
+                                value={loginData.email}
+                                onChange={e => setLoginData({ ...loginData, email: e.target.value })}
+                                placeholder="ejemplo@empresa.com"
+                                style={{ width: '100%', padding: '12px', borderRadius: '10px', background: 'var(--background)', border: '1px solid var(--glass-border)', color: 'white', fontSize: '0.95rem' }}
+                            />
+                        </div>
+
+                        <div>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                                <Lock size={14} /> Contraseña
+                            </label>
+                            <input
+                                required
+                                type="password"
+                                value={loginData.password}
+                                onChange={e => setLoginData({ ...loginData, password: e.target.value })}
+                                placeholder="••••••••"
+                                style={{ width: '100%', padding: '12px', borderRadius: '10px', background: 'var(--background)', border: '1px solid var(--glass-border)', color: 'white', fontSize: '0.95rem' }}
+                            />
+                        </div>
+
+                        {loginError && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f43f5e', background: 'rgba(244, 63, 94, 0.1)', padding: '10px', borderRadius: '8px', fontSize: '0.85rem' }}>
+                                <AlertCircle size={16} /> {loginError}
+                            </div>
+                        )}
+
+                        <button
+                            disabled={isLoggingIn}
+                            type="submit"
+                            className="neon-button"
+                            style={{ marginTop: '0.5rem', padding: '14px', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                        >
+                            {isLoggingIn ? <><Loader2 size={18} className="animate-spin" /> Entrando...</> : 'Iniciar Sesión'}
+                        </button>
+                    </form>
+
+                    <div style={{ marginTop: '2rem', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                            ¿Olvidaste tu contraseña? Contacta con tu gerente.
+                        </p>
+                        <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '1rem', marginTop: '0.5rem' }}>
+                            <p style={{ fontSize: '0.85rem', color: 'var(--text)', marginBottom: '0.8rem' }}>¿Eres nuevo y quieres crear tu empresa?</p>
+                            <button
+                                onClick={() => setShowOnboardingOverride(true)}
+                                style={{ background: 'transparent', border: '1px solid var(--primary)', color: 'var(--primary)', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem' }}
+                            >
+                                Registrar Empresa
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -2,9 +2,9 @@ import emailjs from '@emailjs/browser';
 
 // Estas son las credenciales para configurar EmailJS. 
 // El usuario puede obtener estas claves de forma gratuita en https://www.emailjs.com/
-const EMAILJS_SERVICE_ID = 'service_default'; // Placeholder
-const EMAILJS_TEMPLATE_ID = 'template_invitation'; // Placeholder
-const EMAILJS_PUBLIC_KEY = 'YOUR_PUBLIC_KEY'; // Placeholder
+const EMAILJS_SERVICE_ID = 'service_ya8le79';
+const EMAILJS_TEMPLATE_ID = 'template_sq54t2j';
+const EMAILJS_PUBLIC_KEY = 'aqWQgR98oALaOJs7j';
 
 export interface InvitationData {
     to_name: string;
@@ -17,7 +17,7 @@ export interface InvitationData {
 
 export const sendInvitationEmail = async (data: InvitationData): Promise<{ success: boolean; message: string }> => {
     // Si no se han configurado las claves reales, usamos un fallback a mailto para que el usuario no se quede bloqueado
-    if (EMAILJS_PUBLIC_KEY === 'YOUR_PUBLIC_KEY') {
+    if (!EMAILJS_PUBLIC_KEY || EMAILJS_PUBLIC_KEY === 'YOUR_PUBLIC_KEY') {
         const subject = encodeURIComponent(`Invitación a unirse a ${data.company_name} en ShiftMaster Pro`);
         const body = encodeURIComponent(
             `Hola ${data.to_name},\n\n` +
