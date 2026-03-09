@@ -17,7 +17,7 @@ export interface InvitationData {
 
 export const sendInvitationEmail = async (data: InvitationData): Promise<{ success: boolean; message: string }> => {
     // Si no se han configurado las claves reales, usamos un fallback a mailto para que el usuario no se quede bloqueado
-    if (!EMAILJS_PUBLIC_KEY || EMAILJS_PUBLIC_KEY === 'YOUR_PUBLIC_KEY') {
+    if (!EMAILJS_PUBLIC_KEY || EMAILJS_PUBLIC_KEY.includes('YOUR_')) {
         const subject = encodeURIComponent(`Invitación a unirse a ${data.company_name} en ShiftMaster Pro`);
         const body = encodeURIComponent(
             `Hola ${data.to_name},\n\n` +
