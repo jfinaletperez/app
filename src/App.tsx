@@ -71,8 +71,8 @@ const App: React.FC = () => {
         }
     };
 
-    if (!companyName) {
-        return <Onboarding />;
+    if (!companyName || showOnboardingOverride) {
+        return <Onboarding onCancel={companyName ? () => setShowOnboardingOverride(false) : undefined} />;
     }
 
     if (!user) {

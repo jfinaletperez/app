@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Building2, User, Mail, ArrowRight, ShieldCheck } from 'lucide-react';
 
-const Onboarding: React.FC = () => {
+const Onboarding: React.FC<{ onCancel?: () => void }> = ({ onCancel }) => {
     const { registerCompany } = useAuth();
     const [formData, setFormData] = useState({
         company: '',
@@ -14,6 +14,7 @@ const Onboarding: React.FC = () => {
         e.preventDefault();
         if (!formData.company || !formData.adminName || !formData.adminEmail) return;
         registerCompany(formData.company, formData.adminName, formData.adminEmail);
+        if (onCancel) onCancel(); // Si veníamos de un override, cerramos el override al terminar
     };
 
     return (
@@ -22,6 +23,15 @@ const Onboarding: React.FC = () => {
                 <div style={{ position: 'absolute', top: '-20px', right: '-20px', opacity: 0.05, transform: 'rotate(15deg)' }}>
                     <Building2 size={200} />
                 </div>
+
+                {onCancel && (
+                    <button
+                        onClick={onCancel}
+                        style={{ position: 'absolute', top: '20px', left: '20px', background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', zIndex: 10 }}
+                    >
+                        ← Volver al Login
+                    </button>
+                )}
 
                 <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
                     <div style={{ display: 'inline-flex', background: 'var(--primary)', padding: '12px', borderRadius: '16px', color: 'white', marginBottom: '1.5rem', boxShadow: '0 0 20px var(--primary-glow)' }}>
