@@ -34,14 +34,18 @@ export const sendInvitationEmail = async (data: InvitationData): Promise<{ succe
         await emailjs.send(
             EMAILJS_SERVICE_ID,
             EMAILJS_TEMPLATE_ID,
+            { ...data },
             {
-                ...data
-            },
-            EMAILJS_PUBLIC_KEY
+                publicKey: EMAILJS_PUBLIC_KEY,
+            }
         );
         return { success: true, message: 'La invitación ha sido enviada con éxito al correo del trabajador.' };
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error sending email:', error);
-        return { success: false, message: 'Hubo un error al enviar el correo automático. Inténtalo de nuevo más tarde.' };
+        const errorMessage = error?.text || error?.message || 'Error desconocido';
+        return {
+            success: false,
+            message: `Error al enviar correo: ${errorMessage}. Revisa tu configuración de EmailJS.`
+        };
     }
 };
