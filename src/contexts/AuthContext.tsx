@@ -63,7 +63,7 @@ interface AuthContextType {
     weekKey: string;
     login: (email: string, password: string) => Promise<{ success: boolean; message: string }>;
     logout: () => void;
-    registerCompany: (company: string, adminName: string, adminEmail: string) => void;
+    registerCompany: (company: string, adminName: string, adminEmail: string, adminPassword: string) => void;
     isEditor: boolean;
     inviteEmployee: (name: string, email: string, role: Role, jobTitle: string, jobColor: string, dayRate: number, isHidden?: boolean) => void;
     updateEmployee: (id: string, name: string, email: string, role: Role, jobTitle: string, jobColor: string, dayRate: number, isHidden: boolean) => void;
@@ -162,19 +162,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     };
 
-    const registerCompany = (company: string, adminName: string, adminEmail: string) => {
-        const adminId = 'admin-' + Math.random().toString(36).substr(2, 5);
+    const registerCompany = (company: string, adminName: string, adminEmail: string, adminPassword: string) => {
+        const adminId = 'admin-' + Math.random().toString(36).substring(2, 7);
         const adminEmployee: Employee = {
             id: adminId,
             name: adminName,
-            email: adminEmail,
+            email: adminEmail.toLowerCase(),
             role: 'MANAGER',
             jobTitle: 'Gerente General',
             jobColor: '#6366f1',
             dayRate: 0,
             status: 'ACTIVE',
             isHidden: false,
-            password: 'admin' // Password por defecto para el primer admin
+            password: adminPassword
         };
 
         setCompanyName(company);

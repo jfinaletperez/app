@@ -7,13 +7,14 @@ const Onboarding: React.FC<{ onCancel?: () => void }> = ({ onCancel }) => {
     const [formData, setFormData] = useState({
         company: '',
         adminName: '',
-        adminEmail: ''
+        adminEmail: '',
+        adminPassword: ''
     });
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!formData.company || !formData.adminName || !formData.adminEmail) return;
-        registerCompany(formData.company, formData.adminName, formData.adminEmail);
+        if (!formData.company || !formData.adminName || !formData.adminEmail || !formData.adminPassword) return;
+        registerCompany(formData.company, formData.adminName, formData.adminEmail, formData.adminPassword);
         if (onCancel) onCancel(); // Si veníamos de un override, cerramos el override al terminar
     };
 
@@ -85,6 +86,20 @@ const Onboarding: React.FC<{ onCancel?: () => void }> = ({ onCancel }) => {
                                 style={{ width: '100%', padding: '12px', borderRadius: '10px', background: 'var(--background)', border: '1px solid var(--glass-border)', color: 'white' }}
                             />
                         </div>
+                    </div>
+
+                    <div>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.6rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+                            <ShieldCheck size={16} /> Contraseña de Acceso
+                        </label>
+                        <input
+                            required
+                            type="password"
+                            value={formData.adminPassword}
+                            onChange={e => setFormData({ ...formData, adminPassword: e.target.value })}
+                            placeholder="Mínimo 6 caracteres"
+                            style={{ width: '100%', padding: '12px', borderRadius: '10px', background: 'var(--background)', border: '1px solid var(--glass-border)', color: 'white', fontSize: '1rem' }}
+                        />
                     </div>
 
                     <button
