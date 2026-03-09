@@ -31,10 +31,15 @@ export const sendInvitationEmail = async (data: InvitationData): Promise<{ succe
     }
 
     try {
+        console.log('Enviando invitación a:', data.to_email);
         await emailjs.send(
             EMAILJS_SERVICE_ID,
             EMAILJS_TEMPLATE_ID,
-            { ...data },
+            {
+                ...data,
+                email: data.to_email, // IMPORTANTE: En tu plantilla usas {{email}} para el destinatario
+                to_email: data.to_email,
+            },
             {
                 publicKey: EMAILJS_PUBLIC_KEY,
             }
