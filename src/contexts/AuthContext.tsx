@@ -64,6 +64,7 @@ interface AuthContextType {
     login: (email: string, password: string) => Promise<{ success: boolean; message: string }>;
     logout: () => void;
     registerCompany: (company: string, adminName: string, adminEmail: string, adminPassword: string) => void;
+    acceptInvitation: (email: string, password: string) => Promise<{ success: boolean; message: string }>;
     isEditor: boolean;
     inviteEmployee: (name: string, email: string, role: Role, jobTitle: string, jobColor: string, dayRate: number, isHidden?: boolean) => void;
     updateEmployee: (id: string, name: string, email: string, role: Role, jobTitle: string, jobColor: string, dayRate: number, isHidden: boolean) => void;
@@ -160,6 +161,34 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         } else {
             return { success: false, message: 'Contraseña incorrecta.' };
         }
+    };
+
+    const acceptInvitation = async (email: string, password: string): Promise<{ success: boolean; message: string }> => {
+        const foundIdx = employees.findIndex(e => e.email.toLowerCase() === email.toLowerCase());
+
+        if (foundIdx === -1) {
+            return { success: false, message: 'Invitación no válida o expirada.' };
+        }
+
+        const updatedEmployees = [...employees];
+        updatedEmployees[foundIdx] = {
+            ...updatedEmployees[foundIdx],
+            password: password,
+            status: 'ACTIVE'
+        };
+
+        setEmployees(updatedEmployees);
+
+        // Autologueamos al usuario
+        const newUser = {
+            id: updatedEmployees[foundIdx].id,
+            name: updatedEmployees[foundIdx].name,
+            role: updatedEmployees[foundIdx].role,
+            email: updatedEmployees[foundIdx].email
+        };
+        setUser(newUser);
+
+        return { success: true, message: 'Perfil creado con éxito.' };
     };
 
     const registerCompany = (company: string, adminName: string, adminEmail: string, adminPassword: string) => {
@@ -304,7 +333,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return (
         <AuthContext.Provider value={{
             user, companyName, employees, quadrants, advances, vacations, currentWeek, weekKey,
-            login, logout, registerCompany, isEditor, inviteEmployee, updateEmployee,
+            login, logout, registerCompany, acceptInvitation, isEditor, inviteEmployee, updateEmployee,
             deleteEmployee, reorderEmployee, updateEmployeeShift,
             updateAdvance, addVacation, updateVacation, deleteVacation, getVacationForDate, isEmployeeOnVacation,
             goToWeek, createNewWeek

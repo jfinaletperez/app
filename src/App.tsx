@@ -9,11 +9,14 @@ import { useAuth } from './contexts/AuthContext';
 import { LayoutDashboard, Users, LogOut, ShieldCheck, DollarSign, Umbrella, Calendar, Building2, Mail, Lock, AlertCircle, Loader2 } from 'lucide-react';
 
 const App: React.FC = () => {
-    const { user, companyName, login, logout, isEditor } = useAuth();
+    const { user, companyName, login, logout, isEditor, acceptInvitation } = useAuth();
     const [activeTab, setActiveTab] = useState<'QUADRANT' | 'EMPLOYEES' | 'SALARIES' | 'VACATIONS' | 'MY_MONTH'>('QUADRANT');
     const [invitationToken, setInvitationToken] = useState<string | null>(new URLSearchParams(window.location.search).get('token'));
     const [showOnboardingOverride, setShowOnboardingOverride] = useState(false);
     const [workerPassword, setWorkerPassword] = useState('');
+
+    const [acceptError, setAcceptError] = useState('');
+    const [isAccepting, setIsAccepting] = useState(false);
 
     if (invitationToken) {
         return (
@@ -35,16 +38,35 @@ const App: React.FC = () => {
                             onChange={e => setWorkerPassword(e.target.value)}
                             style={{ width: '100%', padding: '12px', borderRadius: '10px', background: 'var(--background)', border: '1px solid var(--glass-border)', color: 'white' }}
                         />
-                        <button className="neon-button" onClick={async () => {
-                            // En una app real esto guardaría el correo decodificado del token
-                            // Por ahora, simulamos el login directo con el token decodificado
-                            const email = atob(invitationToken).slice(0, -13); // Restamos el Date.now()
-                            const result = await login(email, workerPassword);
-                            if (result.success) {
-                                setInvitationToken(null);
-                                window.history.replaceState({}, document.title, "/");
-                            }
-                        }}>Crear Perfil y Acceder</button>
+                        {acceptError && (
+                            <div style={{ color: '#f43f5e', fontSize: '0.85rem', background: 'rgba(244, 63, 94, 0.1)', padding: '8px', borderRadius: '8px' }}>
+                                {acceptError}
+                            </div>
+                        )}
+                        <button
+                            disabled={isAccepting}
+                            className="neon-button"
+                            onClick={async () => {
+                                setAcceptError('');
+                                setIsAccepting(true);
+                                try {
+                                    const email = atob(invitationToken).slice(0, -13);
+                                    const result = await acceptInvitation(email, workerPassword);
+                                    if (result.success) {
+                                        setInvitationToken(null);
+                                        window.history.replaceState({}, document.title, "/");
+                                    } else {
+                                        setAcceptError(result.message);
+                                    }
+                                } catch (err) {
+                                    setAcceptError('El enlace de invitación no es válido.');
+                                } finally {
+                                    setIsAccepting(false);
+                                }
+                            }}
+                        >
+                            {isAccepting ? 'Procesando...' : 'Crear Perfil y Acceder'}
+                        </button>
                     </div>
                 </div>
             </div>
