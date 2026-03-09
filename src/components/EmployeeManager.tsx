@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth, Role, Employee } from '../contexts/AuthContext';
-import { UserPlus, Shield, CheckCircle, Clock, Palette, Briefcase, ArrowUp, ArrowDown, Edit2, Trash2, X, Save, DollarSign, Eye, EyeOff } from 'lucide-react';
+import { UserPlus, Shield, CheckCircle, Clock, Palette, Briefcase, ArrowUp, ArrowDown, Edit2, Trash2, X, Save, DollarSign, Eye, EyeOff, Mail, Send } from 'lucide-react';
+import { sendInvitationEmail } from '../services/emailService';
 
 const COLORS = [
     { name: 'Indigo', value: '#6366f1' },
@@ -12,13 +13,14 @@ const COLORS = [
 ];
 
 const EmployeeManager: React.FC = () => {
-    const { employees, inviteEmployee, updateEmployee, deleteEmployee, reorderEmployee, isEditor } = useAuth();
+    const { employees, inviteEmployee, updateEmployee, deleteEmployee, reorderEmployee, isEditor, companyName } = useAuth();
     const [showForm, setShowForm] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [formData, setFormData] = useState({
         name: '', email: '', role: 'WORKER' as Role, jobTitle: '', jobColor: COLORS[0].value, dayRate: 0, isHidden: false
     });
     const [lastLink, setLastLink] = useState('');
+    const [emailStatus, setEmailStatus] = useState<{ type: 'success' | 'error' | 'sending', message: string } | null>(null);
 
     if (!isEditor) return null;
 
@@ -37,18 +39,38 @@ const EmployeeManager: React.FC = () => {
         setLastLink('');
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (editingId) {
             updateEmployee(editingId, formData.name, formData.email, formData.role, formData.jobTitle, formData.jobColor, formData.dayRate, formData.isHidden);
             setEditingId(null);
+            setShowForm(false);
         } else {
+            setEmailStatus({ type: 'sending', message: 'Enviando invitación por correo...' });
+
+            // Creamos el empleado en el estado local (o DB cuando exista)
             inviteEmployee(formData.name, formData.email, formData.role, formData.jobTitle, formData.jobColor, formData.dayRate, formData.isHidden);
+
             const token = btoa(formData.email + Date.now());
-            setLastLink(`${window.location.origin}/invite?token=${token}`);
+            const inviteLink = `${window.location.origin}/invite?token=${token}`;
+
+            const result = await sendInvitationEmail({
+                to_name: formData.name,
+                to_email: formData.email,
+                company_name: companyName || 'ShiftMaster Pro',
+                role: formData.role,
+                job_title: formData.jobTitle,
+                invite_link: inviteLink
+            });
+
+            if (result.success) {
+                setEmailStatus({ type: 'success', message: result.message });
+                setLastLink(inviteLink); // Seguimos guardando el link por seguridad
+            } else {
+                setEmailStatus({ type: 'error', message: result.message });
+            }
         }
         setFormData({ name: '', email: '', role: 'WORKER', jobTitle: '', jobColor: COLORS[0].value, dayRate: 0, isHidden: false });
-        if (editingId) setShowForm(false);
     };
 
     const cancelForm = () => {
@@ -199,10 +221,30 @@ const EmployeeManager: React.FC = () => {
                         </button>
                     </div>
 
-                    {lastLink && (
-                        <div style={{ marginTop: '1.5rem', padding: '1rem', background: 'rgba(6, 182, 212, 0.1)', borderRadius: '8px', border: '1px solid var(--secondary)' }}>
-                            <p style={{ fontSize: '0.9rem', color: 'var(--secondary)', marginBottom: '0.5rem' }}>✅ Invitación generada. Envía este enlace:</p>
-                            <code style={{ wordBreak: 'break-all', fontSize: '0.8rem' }}>{lastLink}</code>
+                    {emailStatus && (
+                        <div style={{
+                            marginTop: '1.5rem',
+                            padding: '1rem',
+                            background: emailStatus.type === 'success' ? 'rgba(16, 185, 129, 0.1)' :
+                                emailStatus.type === 'error' ? 'rgba(244, 63, 94, 0.1)' : 'rgba(6, 182, 212, 0.1)',
+                            borderRadius: '8px',
+                            border: `1px solid ${emailStatus.type === 'success' ? 'var(--secondary)' :
+                                emailStatus.type === 'error' ? 'var(--accent)' : 'var(--primary)'}`,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.8rem'
+                        }}>
+                            {emailStatus.type === 'sending' ? <Send size={20} className="animate-pulse" /> : <Mail size={20} />}
+                            <div>
+                                <p style={{ fontSize: '0.9rem', color: emailStatus.type === 'success' ? 'var(--secondary)' : 'white', fontWeight: 'bold' }}>
+                                    {emailStatus.message}
+                                </p>
+                                {emailStatus.type === 'success' && (
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                                        El trabajador podrá configurar su perfil desde el enlace recibido.
+                                    </p>
+                                )}
+                            </div>
                         </div>
                     )}
                 </form>

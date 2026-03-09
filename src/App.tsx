@@ -11,6 +11,33 @@ import { LayoutDashboard, Users, LogOut, ShieldCheck, DollarSign, Umbrella, Cale
 const App: React.FC = () => {
     const { user, companyName, login, logout, isEditor } = useAuth();
     const [activeTab, setActiveTab] = useState<'QUADRANT' | 'EMPLOYEES' | 'SALARIES' | 'VACATIONS' | 'MY_MONTH'>('QUADRANT');
+    const [invitationToken, setInvitationToken] = useState<string | null>(new URLSearchParams(window.location.search).get('token'));
+
+    if (invitationToken) {
+        return (
+            <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '1rem' }}>
+                <div className="glass-card" style={{ padding: '3rem', textAlign: 'center', maxWidth: '500px', width: '100%' }}>
+                    <ShieldCheck size={64} style={{ color: 'var(--primary)', marginBottom: '1.5rem' }} />
+                    <h1 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '1rem', background: 'linear-gradient(to right, var(--primary), var(--secondary))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                        ¡Bienvenido a {companyName || 'ShiftMaster Pro'}!
+                    </h1>
+                    <p style={{ color: 'var(--text)', marginBottom: '1.5rem' }}>Has sido invitado a unirte como trabajador.</p>
+                    <p style={{ color: 'var(--text-muted)', marginBottom: '2.5rem', fontSize: '0.9rem' }}>
+                        Para completar tu perfil, por favor introduce una contraseña para tu cuenta vinculada a este dispositivo.
+                    </p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        <input type="password" placeholder="Nueva Contraseña" style={{ width: '100%', padding: '12px', borderRadius: '10px', background: 'var(--background)', border: '1px solid var(--glass-border)', color: 'white' }} />
+                        <button className="neon-button" onClick={() => {
+                            // En una app real esto guardaría la clave
+                            setInvitationToken(null);
+                            window.history.replaceState({}, document.title, "/");
+                            login('WORKER');
+                        }}>Crear Perfil y Acceder</button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     if (!companyName) {
         return <Onboarding />;
